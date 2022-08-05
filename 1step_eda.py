@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[43]:
+# In[1]:
 
 
 import cv2
@@ -16,6 +16,7 @@ from PIL.ExifTags import TAGS
 
 import os
 from collections import Counter
+from typing import Tuple
 
 import pandas as pd
 import numpy as np
@@ -105,7 +106,7 @@ def open_img(inp_path: str) -> np.ndarray:
 
 # ## Загрузка данных
 
-# In[16]:
+# In[8]:
 
 
 train_list = os.listdir(DIR_DATA_TRAIN)
@@ -166,25 +167,17 @@ train_df.groupby('image_name').agg('size').value_counts()
 
 
 # Посмотрим на размеры
-
-# In[13]:
-
-
-get_ipython().run_cell_magic('time', '', "#tmp = [fl for fl in train_list if fl.endswith('.jpg')]\n#sizes = [cv2.imread(os.path.join(DIR_DATA_TRAIN, el )).shape \\\nsizes = [open_img(os.path.join(DIR_DATA_TRAIN, el )).shape \\\n         for el in tqdm(train_list)]\nCounter(sizes)")
-
-
-# In[15]:
-
-
-get_ipython().run_cell_magic('time', '', "#tmp = [fl for fl in test_list if fl.endswith('.jpg')]\n#sizes = [cv2.imread(os.path.join(DIR_DATA_TEST, el )).shape \\\nsizes = [open_img(os.path.join(DIR_DATA_TEST, el )).shape \\\n         for el in tqdm(test_list)]\nCounter(sizes)")
-
-
-# In[ ]:
-
-
-
-
-
+%%time
+#tmp = [fl for fl in train_list if fl.endswith('.jpg')]
+#sizes = [cv2.imread(os.path.join(DIR_DATA_TRAIN, el )).shape \
+sizes = [open_img(os.path.join(DIR_DATA_TRAIN, el )).shape \
+         for el in tqdm(train_list)]
+Counter(sizes)Counter({(3024, 4032, 3): 529, (4032, 3024, 3): 1})%%time
+#tmp = [fl for fl in test_list if fl.endswith('.jpg')]
+#sizes = [cv2.imread(os.path.join(DIR_DATA_TEST, el )).shape \
+sizes = [open_img(os.path.join(DIR_DATA_TEST, el )).shape \
+         for el in tqdm(test_list)]
+Counter(sizes)Counter({(3024, 4032, 3): 519, (4032, 3024, 3): 2})
 # In[ ]:
 
 
@@ -193,26 +186,26 @@ get_ipython().run_cell_magic('time', '', "#tmp = [fl for fl in test_list if fl.e
 
 # Посмотрим на мин и макс
 
-# In[46]:
+# In[15]:
 
 
 train_df.distance.nlargest(5)
 
 
-# In[45]:
+# In[16]:
 
 
 train_df.distance.nsmallest(5)
 
 
-# In[44]:
+# In[17]:
 
 
 print('min ', train_df.distance[train_df.distance.argmin()], '  ', train_df.image_name[train_df.distance.argmin()])
 print('max ', train_df.distance[train_df.distance.argmax()], '  ', train_df.image_name[train_df.distance.argmax()])
 
 
-# In[41]:
+# In[18]:
 
 
 #img = open_img(os.path.join(DIR_DATA_TRAIN, train_df.image_name[train_df.distance.argmin()]))
@@ -230,13 +223,13 @@ cv2.destroyAllWindows()
 
 
 
-# In[17]:
+# In[ ]:
 
 
 
 
 
-# In[18]:
+# In[ ]:
 
 
 
@@ -270,14 +263,14 @@ train_df.distance.hist(bins = 15)
 
 # Посмотрим пересечение датасетов
 
-# In[23]:
+# In[22]:
 
 
 tmp = list(fnames_train.intersection(fnames_test))
 len(tmp)
 
 
-# In[29]:
+# In[ ]:
 
 
 for idx, el in enumerate(tmp):
@@ -310,7 +303,7 @@ for idx, el in enumerate(tmp):
 
 # Смазанные фото
 
-# In[42]:
+# In[ ]:
 
 
 #for el in train_heic:
@@ -327,14 +320,14 @@ for el in test_heic:
 # In[ ]:
 
 
-motion_blur_train = ['img_2709.heic', 'img_2733.heic', 'img_2733.heic']    # 'img_2733.heic' возможно рабочий 
+motion_blur_train = ['img_2709.heic', 'img_2733.heic', 'img_2734.heic']    # 'img_2734.heic' возможно рабочий 
 motion_blur_test  = ['img_2674.heic']
 
 
-# In[40]:
+# In[ ]:
 
 
-img = open_img(os.path.join(DIR_DATA_TRAIN, 'img_2734.heic'))
+img = open_img(os.path.join(DIR_DATA_TRAIN, 'img_2745.heic'))
 #img = open_img(os.path.join(DIR_DATA_TEST, motion_blur_test[0]))
 img = cv2.resize(img, [252*4, 252*3])
                
@@ -383,6 +376,180 @@ for tagid in exifdata:
     
     # printing the final result
     print(f"{tagname:25}: {value}")
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[438]:
+
+
+import torch
+
+model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
+model.classes = [0, 2]  # person and car
+
+_ = model.cpu()
+
+
+# In[439]:
+
+
+# motion blur img_2733.heic, img_2734.heic
+# nearest img_2858.jpg
+# several cars img_2896.jpg, img_2885.jpg, !! img_2674.jpg, img_2660.jpg
+# part closed img_2723.jpg
+# left first img_2694.jpg
+# car by side img_2418.jpg, 
+# construction on the roof img_1832.jpg
+# double car img_1621.jpg
+
+
+# !!!TEST with strange number
+
+# 'x_min', 'y_min', 'x_max', 'y_max', 'conf', 'class'
+
+
+# In[440]:
+
+
+#img = open_img(os.path.join(DIR_DATA_TRAIN, 'img_2733.heic'))
+img = open_img(os.path.join(DIR_DATA_TRAIN, 'img_2674.jpg'))
+#results = model(np.array(img))
+results = model(img)
+
+
+# In[441]:
+
+
+def get_car_center(inp_tensor: torch.Tensor) -> Tuple[int, int]:
+    
+    #car_cntr = (int((inp_tensor.xyxy[0][el][2].int().item() - inp_tensor.xyxy[0][el][0].int().item())/2 + inp_tensor.xyxy[0][el][0].int().item()),
+    #            int((inp_tensor.xyxy[0][el][3].int().item() - inp_tensor.xyxy[0][el][1].int().item())/2 + inp_tensor.xyxy[0][el][1].int().item())
+    #    )
+
+    car_cntr = (int((inp_tensor[2].int().item() - inp_tensor[0].int().item())/2 + inp_tensor[0].int().item()),
+                int((inp_tensor[3].int().item() - inp_tensor[1].int().item())/2 + inp_tensor[1].int().item())
+        )
+    
+    return car_cntr
+
+
+# In[442]:
+
+
+def get_center_dist(inp_center: Tuple[int, int], inp_point: Tuple[int, int]) -> float:
+    
+    return np.sqrt((inp_center[0] - inp_point[0])**2 +                    (inp_center[1] - inp_point[1])**2)
+
+
+# In[443]:
+
+
+def determine_targ_car(inp_results, inp_img_cntr) -> int:
+    
+    min = 1000000
+
+    for el in range(inp_results.xyxy[0].shape[0]):
+        car_cntr = get_car_center(inp_results.xyxy[0][el])
+        cur_dist = get_center_dist(inp_img_cntr, car_cntr)
+        if cur_dist < min:
+            min = cur_dist
+            min_idx = el
+
+    #print(min_idx)
+    return min_idx
+
+min = 1000000
+#img_cntr = (int(img.shape[0]/2), int(img.shape[1]/2))
+img_cntr = (int(img.shape[1]/2), int(img.shape[0]/2))
+
+
+for el in range(results.xyxy[0].shape[0]):
+    car_cntr = get_car_center(results.xyxy[0][el])
+    cur_dist = get_center_dist(img_cntr, car_cntr)
+    if cur_dist < min:
+        min = cur_dist
+        min_idx = el
+        
+print(min_idx)
+# In[444]:
+
+
+img_cntr = (int(img.shape[1]/2), int(img.shape[0]/2))
+target_goal = determine_targ_car(results, img_cntr)
+
+
+# In[445]:
+
+
+cv2.circle(img, img_cntr, 10, (0, 0, 255), 20)
+cv2.rectangle(img, 
+              (results.xyxy[0][target_goal][0].int().item(), results.xyxy[0][target_goal][1].int().item()), 
+             (results.xyxy[0][target_goal][2].int().item(), results.xyxy[0][target_goal][3].int().item()), 
+             (255,0,0), 2)
+#image = cv.circle(image, centerOfCircle, radius, color, thickness)
+car_cntr = get_car_center(results.xyxy[0][target_goal])
+_ = cv2.circle(img, car_cntr, 10, (255, 0, 0), 20)
+
+for el in range(results.xyxy[0].shape[0]):
+    cv2.rectangle(img, 
+                  (results.xyxy[0][el][0].int().item(), results.xyxy[0][el][1].int().item()), 
+                  (results.xyxy[0][el][2].int().item(), results.xyxy[0][el][3].int().item()), 
+                  (255,0,0), 2
+                 )
+    #image = cv.circle(image, centerOfCircle, radius, color, thickness)
+    car_cntr = get_car_center(results.xyxy[0][el])
+    cv2.circle(img, car_cntr, 10, (255, 0, 0), 20)
+    
+    text_point = (results.xyxy[0][el][1].int().item(),
+                  results.xyxy[0][el][3].int().item()
+                 )
+                  
+    cv2.putText(img, f'car{el}', text_point, cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 0, 0), 5)
+    
+    #break
+# In[446]:
+
+
+img = cv2.resize(img, [252*4, 252*3])
+               
+cv2.imshow('motion blur', img)
+cv2.waitKey(0)
+cv2.destroyAllWindows() 
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
