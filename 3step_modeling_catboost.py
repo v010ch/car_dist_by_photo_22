@@ -153,6 +153,8 @@ scores['test-RMSE-mean'].min(), scores['test-RMSE-mean'].argmin(), niter
 0.8717672874064516, 445    x/y/conf/h/w with 0
 0.8689944606627914, 608,   x/y/conf/h/w with nulls
 0.8423961974720088, 271    x/y/conf/h/w with nulls   yolov5x6
+0.6345816635973699, 221    x/y/conf/h/w with nulls   yolov5l cntr
+
 # In[ ]:
 
 
@@ -162,11 +164,13 @@ scores['test-RMSE-mean'].min(), scores['test-RMSE-mean'].argmin(), niter
 # In[12]:
 
 
-get_ipython().run_cell_magic('time', '', "\nfeatures = ['x_min', 'y_min', 'x_max', 'y_max', 'conf', 'h', 'w']\n\n#model_cb = CatBoostRegressor(iterations = niter, verbose = 100)\nmodel_cb = CatBoostRegressor(verbose = 100)\n\n# Fit model\nmodel_cb.fit(train_df[features], train_df[['distance']].values)")
+get_ipython().run_cell_magic('time', '', "\nfeatures = ['x_min', 'y_min', 'x_max', 'y_max', 'conf', 'h', 'w']\n\nmodel_cb = CatBoostRegressor(iterations = niter, verbose = 100)\n#model_cb = CatBoostRegressor(verbose = 100)\n\n# Fit model\nmodel_cb.fit(train_df[features], train_df[['distance']].values)")
 
 999:	learn: 0.2699253	total: 1.49s	remaining: 0us       x/y/conf
 999:	learn: 0.2365099	total: 1.23s	remaining: 0us       x/y/conf/h/w with nulls
 999:	learn: 0.2223038	total: 1.57s	remaining: 0us       x/y/conf/h/w with nulls yolov5x6
+999:	learn: 0.1702023	total: 1.19s	remaining: 0us       x/y/conf/h/w with nulls yolo5l cntr
+
 # In[13]:
 
 
@@ -218,7 +222,7 @@ for file_name in test_img_names - set(sample_solution_df['image_name'].values):
 lost_test_items_df = pd.DataFrame(lost_test_items, columns=['image_name', 'distance'])
 sample_solution_df = pd.concat([sample_solution_df, lost_test_items_df])
 
-sample_solution_df.to_csv(os.path.join(DIR_SUBM, '9_yolo5l_hw_wnulls_cntr.csv'), sep=';', index=False)
+sample_solution_df.to_csv(os.path.join(DIR_SUBM, '11_yolo5l_hw_wnulls_cntrv2_niter.csv'), sep=';', index=False)
 
 
 # In[ ]:

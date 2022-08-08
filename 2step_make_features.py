@@ -129,13 +129,16 @@ def get_center_dist(inp_center: Tuple[int, int], inp_point: Tuple[int, int]) -> 
 
 def determine_targ_car(inp_results, inp_img_cntr: Tuple[int, int]) -> int:
     
-    min = 1000000
-
+    min_dist = 1000000
+    min_idx = -1
+    
     for el in range(inp_results.xyxy[0].shape[0]):
+        if inp_results.xyxy[0][el][5].int().item() != 2:
+            continue
         car_cntr = get_car_center(inp_results.xyxy[0][el])
         cur_dist = get_center_dist(inp_img_cntr, car_cntr)
-        if cur_dist < min:
-            min = cur_dist
+        if cur_dist < min_dist:
+            min_dist = cur_dist
             min_idx = el
 
     return min_idx
@@ -170,6 +173,10 @@ def create_feeatures(inp_fnames: List[str], inp_dir: str, inp_model, use_centr: 
             else:
                 target_goal = 0
 
+            if target_goal < 0:
+                print(f'wtf2, {img_name}   {results.xyxy[0].shape}')
+                continue
+                
             h = results.xyxy[0][target_goal][3] - results.xyxy[0][target_goal][1]
             w = results.xyxy[0][target_goal][2] - results.xyxy[0][target_goal][0]
             results = results.xyxy[0][target_goal].numpy().tolist() + [h.item(), w.item()]
@@ -291,19 +298,9 @@ train_df['class'].value_counts()
 
 test_df['class'].value_counts()
 
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
+2.0    525
+0.0      42.0    514
+0.0      4
 # In[ ]:
 
 
