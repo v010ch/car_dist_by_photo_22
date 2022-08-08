@@ -24,7 +24,7 @@ import torch
 
 
 import os
-from typing import Tuple
+from typing import List, Tuple, Optional
 
 import pandas as pd
 import numpy as np
@@ -37,7 +37,7 @@ from tqdm.auto import tqdm
 tqdm.pandas()
 
 
-# In[63]:
+# In[4]:
 
 
 #import matplotlib
@@ -45,7 +45,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-# In[66]:
+# In[5]:
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
@@ -57,7 +57,7 @@ get_ipython().run_line_magic('matplotlib', 'inline')
 
 
 
-# In[4]:
+# In[6]:
 
 
 DIR_SUBM = os.path.join(os.getcwd(), 'subm')
@@ -72,7 +72,7 @@ DIR_DATA_TEST  = os.path.join(DIR_DATA, 'test')
 
 
 
-# In[5]:
+# In[7]:
 
 
 test_img_names  = set(os.listdir(DIR_DATA_TEST))
@@ -80,7 +80,7 @@ train_img_names = set(os.listdir(DIR_DATA_TRAIN))
 len(test_img_names), len(train_img_names)
 
 
-# In[6]:
+# In[8]:
 
 
 train_labels_df = pd.read_csv(os.path.join(DIR_DATA, 'train.csv'), sep=';', index_col=None)
@@ -104,7 +104,7 @@ train_labels_df = pd.read_csv(os.path.join(DIR_DATA, 'train.csv'), sep=';', inde
 
 
 
-# In[7]:
+# In[9]:
 
 
 def get_car_center(inp_tensor: torch.Tensor) -> Tuple[int, int]:
@@ -116,7 +116,7 @@ def get_car_center(inp_tensor: torch.Tensor) -> Tuple[int, int]:
     return car_cntr
 
 
-# In[8]:
+# In[10]:
 
 
 def get_center_dist(inp_center: Tuple[int, int], inp_point: Tuple[int, int]) -> float:
@@ -124,7 +124,7 @@ def get_center_dist(inp_center: Tuple[int, int], inp_point: Tuple[int, int]) -> 
     return np.sqrt((inp_center[0] - inp_point[0])**2 +                    (inp_center[1] - inp_point[1])**2)
 
 
-# In[9]:
+# In[11]:
 
 
 def determine_targ_car(inp_results, inp_img_cntr: Tuple[int, int]) -> int:
@@ -141,10 +141,10 @@ def determine_targ_car(inp_results, inp_img_cntr: Tuple[int, int]) -> int:
     return min_idx
 
 
-# In[87]:
+# In[12]:
 
 
-def create_feeatures(inp_fnames, inp_dir, inp_model, use_centr = False):
+def create_feeatures(inp_fnames: List[str], inp_dir: str, inp_model, use_centr: Optional[bool] = False):
     
     ret_data = []
 
@@ -155,14 +155,17 @@ def create_feeatures(inp_fnames, inp_dir, inp_model, use_centr = False):
         #else:
         #    img = Image.open(os.path.join(inp_dir, img_name))
         img = Image.open(os.path.join(inp_dir, img_name))
-
-        #img_ = np.array(img)
-        results = model(np.array(img))
+        
+        
+        img = np.array(img)
+        #results = model(np.array(img))
+        results = model(img)
     
         if results.xyxy[0].shape != torch.Size([0, 6]):
 
             if use_centr:
-                img_cntr = (int(img_.shape[1]/2), int(img_.shape[0]/2))
+                #img_cntr = (int(img_.shape[1]/2), int(img_.shape[0]/2))
+                img_cntr = (int(img.shape[1]/2), int(img.shape[0]/2))
                 target_goal = determine_targ_car(results, img_cntr)
             else:
                 target_goal = 0
@@ -194,10 +197,11 @@ def create_feeatures(inp_fnames, inp_dir, inp_model, use_centr = False):
 
 
 
-# In[18]:
+# In[13]:
 
 
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
+#model = torch.hub.load('ultralytics/yolov5', 'yolov5x6')
+model = torch.hub.load('ultralytics/yolov5', 'yolov5l')
 model.classes = [0, 2]  # person and car
 _ = model.cpu()
 
@@ -229,10 +233,10 @@ for img_name in tqdm(train_img_names):
         
         results = [img_name] + results.xyxy[0][target_goal].numpy().tolist()
         train_data.append(results)
-# In[88]:
+# In[14]:
 
 
-train_df = create_feeatures(train_img_names, DIR_DATA_TRAIN, model) #use_centr
+train_df = create_feeatures(train_img_names, DIR_DATA_TRAIN, model, use_centr = True) #use_centr
 train_df = pd.merge(train_labels_df, train_df, how='left')
 train_df.shape
 
@@ -243,10 +247,10 @@ train_df.shape
 
 
 
-# In[89]:
+# In[15]:
 
 
-test_df = create_feeatures(test_img_names, DIR_DATA_TEST, model) #use_centr
+test_df = create_feeatures(test_img_names, DIR_DATA_TEST, model, use_centr = True) #use_centr
 test_df.shape
 
 
@@ -256,24 +260,36 @@ test_df.shape
 
 
 
-# In[90]:
+# In[16]:
 
 
 sns.histplot(train_df, x='h')
 plt.show()
 
 
-# In[91]:
+# In[17]:
 
 
 sns.histplot(train_df, x='w')
 plt.show()
 
 
-# In[92]:
+# In[18]:
 
 
 train_df.head(20)
+
+
+# In[19]:
+
+
+train_df['class'].value_counts()
+
+
+# In[20]:
+
+
+test_df['class'].value_counts()
 
 
 # In[ ]:
@@ -282,7 +298,19 @@ train_df.head(20)
 
 
 
-# In[93]:
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[21]:
 
 
 train_df.to_csv(os.path.join(DIR_DATA, 'train_upd.csv'), index = False)
