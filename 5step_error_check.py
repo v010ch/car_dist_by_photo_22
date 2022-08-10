@@ -14,7 +14,7 @@ import time
 notebookstart= time.time()
 
 
-# In[60]:
+# In[2]:
 
 
 import os
@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-# In[41]:
+# In[3]:
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
@@ -60,7 +60,7 @@ DIR_DATA_TEST  = os.path.join(DIR_DATA, 'test')
 
 
 
-# In[6]:
+# In[5]:
 
 
 train_df = pd.read_csv(os.path.join(DIR_SUBM_TRAIN, 'train_with_pred.csv'))
@@ -73,7 +73,7 @@ train_df.shape
 
 
 
-# In[15]:
+# In[6]:
 
 
 def open_img(inp_path: str) -> np.ndarray:
@@ -96,7 +96,7 @@ def open_img(inp_path: str) -> np.ndarray:
     return ret_img
 
 
-# In[65]:
+# In[7]:
 
 
 def plot_corrc(inp_df, inp_cols, targ_cols = ['distance']):
@@ -136,56 +136,56 @@ def plot_corrc(inp_df, inp_cols, targ_cols = ['distance']):
 
 # Рассчитаем и помотрим на ошибки
 
-# In[33]:
+# In[8]:
 
 
 train_df['err'] = train_df.distance - train_df.pred
 train_df['err_upd'] = train_df.err.apply(lambda x: abs(x))
 
 
-# In[45]:
+# In[9]:
 
 
 train_df.err.hist()
 
 
-# In[46]:
+# In[10]:
 
 
 train_df.err_upd.hist()
 
 
-# In[49]:
+# In[11]:
 
 
 train_df.err.nsmallest(5)
 
 
-# In[50]:
+# In[12]:
 
 
 train_df.err.nlargest(5)
 
 
-# In[37]:
+# In[13]:
 
 
 train_df.sort_values(by='err_upd', ascending = False, inplace = True)
 
 
-# In[47]:
+# In[14]:
 
 
 train_df.head(20)
 
 
-# In[66]:
+# In[15]:
 
 
 plot_corrc(train_df, ['err'])
 
 
-# In[62]:
+# In[16]:
 
 
 #plot_corrc(train_df, ['err_upd'])
@@ -199,7 +199,7 @@ plot_corrc(train_df, ['err'])
 
 # Посмотрим на кадры с наибольней (по модулю) ошибкой
 
-# In[56]:
+# In[17]:
 
 
 for el in train_df.index[:5]:

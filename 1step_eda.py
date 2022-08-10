@@ -409,16 +409,16 @@ plot_corrc(train_df, ['w', 'log_w'])
 
 
 
-# In[28]:
-
-
-train_df.sort_values('w').head(10)
-
-
 # In[29]:
 
 
-test_df.sort_values('w').head(10)
+train_df.sort_values('w').head(5)
+
+
+# In[30]:
+
+
+test_df.sort_values('w').head(5)
 
 
 # In[32]:
