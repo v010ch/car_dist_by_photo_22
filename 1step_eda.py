@@ -16,7 +16,7 @@ from PIL.ExifTags import TAGS
 
 import os
 from collections import Counter
-from typing import Tuple
+from typing import Tuple, List, Optional
 
 import pandas as pd
 import numpy as np
@@ -34,10 +34,18 @@ tqdm.pandas()
 # In[4]:
 
 
-import matplotlib
+#import matplotlib
+from matplotlib import pyplot as plt
+import seaborn as sns
 
 
 # In[5]:
+
+
+get_ipython().run_line_magic('matplotlib', 'inline')
+
+
+# In[6]:
 
 
 #!pip list
@@ -55,7 +63,7 @@ import matplotlib
 
 
 
-# In[6]:
+# In[7]:
 
 
 DIR_DATA = os.path.join(os.getcwd(), 'data')
@@ -69,7 +77,7 @@ DIR_DATA_TEST  = os.path.join(DIR_DATA, 'test')
 
 
 
-# In[7]:
+# In[8]:
 
 
 def open_img(inp_path: str) -> np.ndarray:
@@ -92,6 +100,37 @@ def open_img(inp_path: str) -> np.ndarray:
     return ret_img
 
 
+# In[9]:
+
+
+def plot_corrc(inp_df: pd.DataFrame, inp_cols: List[str], targ_cols: Optional[List[int]] = ['distance']):
+    f, ax = plt.subplots(1, 2, figsize=(24, 8))
+    sns.heatmap(inp_df[inp_cols + targ_cols].corr(),
+    #sns.heatmap(inp_df.query('c2 == 0')[inp_cols + targ_cols].corr(), \n",
+                annot = True, cmap= 'coolwarm', linewidths=3, linecolor='black', ax = ax[0])
+    sns.heatmap(inp_df[inp_cols + targ_cols].corr(method = 'spearman'),
+    #sns.heatmap(inp_df.query('c2 == 1')[inp_cols + targ_cols].corr(), \n",
+                annot = True, cmap= 'coolwarm', linewidths=3, linecolor='black', ax = ax[1])
+#    sns.heatmap(inp_df.query('c2 == 0')[inp_cols + targ_cols].corr(method = 'spearman'), \n",
+#                annot = True, cmap= 'coolwarm', linewidths=3, linecolor='black', ax = ax[1, 0])\n",
+#    sns.heatmap(inp_df.query('c2 == 1')[inp_cols + targ_cols].corr(method = 'spearman'), \n",
+#                annot = True, cmap= 'coolwarm', linewidths=3, linecolor='black', ax = ax[1, 1])\n",
+    if 'distrib_brdr' in inp_df.columns:
+        sns.pairplot(inp_df[inp_cols + targ_cols + ['distrib_brdr']], height = 16,
+                     hue = 'distrib_brdr', #palette = {\"A\": \"C0\", \"B\": \"C1\"}\n",
+                     #markers = ['x', 'o']\n",
+                    )
+    else:
+        sns.pairplot(inp_df[inp_cols + targ_cols], height = 16,
+                    )
+
+
+# In[ ]:
+
+
+
+
+
 # In[ ]:
 
 
@@ -106,7 +145,7 @@ def open_img(inp_path: str) -> np.ndarray:
 
 # ## Загрузка данных
 
-# In[8]:
+# In[10]:
 
 
 train_list = os.listdir(DIR_DATA_TRAIN)
@@ -122,7 +161,7 @@ fnames_train = set([el.split('.')[0] for el in train_list])
 fnames_test  = set([el.split('.')[0] for el in test_list])
 
 
-# In[9]:
+# In[11]:
 
 
 #print(Counter([el.split('.')[1] for el in train_list]))
@@ -135,20 +174,26 @@ fnames_test  = set([el.split('.')[0] for el in test_list])
 
 
 
-# In[10]:
+# ### Загружаем данные
+
+# (train_upd загружается только после выполнения 2step_make_features)
+
+# In[12]:
 
 
-train_df = pd.read_csv(os.path.join(DIR_DATA, 'train.csv'), delimiter = ';')
-train_df.shape
+#train_df = pd.read_csv(os.path.join(DIR_DATA, 'train.csv'), delimiter = ';')
+train_df = pd.read_csv(os.path.join(DIR_DATA, 'train_upd.csv'))
+test_df  = pd.read_csv(os.path.join(DIR_DATA, 'test_upd.csv'))
+train_df.shape, test_df.shape
 
 
-# In[11]:
+# In[13]:
 
 
 train_df.head()
 
 
-# In[12]:
+# In[14]:
 
 
 train_df.groupby('image_name').agg('size').value_counts()
@@ -186,26 +231,26 @@ Counter(sizes)Counter({(3024, 4032, 3): 519, (4032, 3024, 3): 2})
 
 # Посмотрим на мин и макс
 
-# In[13]:
+# In[15]:
 
 
 train_df.distance.nlargest(5)
 
 
-# In[14]:
+# In[16]:
 
 
 train_df.distance.nsmallest(5)
 
 
-# In[15]:
+# In[17]:
 
 
 print('min ', train_df.distance[train_df.distance.argmin()], '  ', train_df.image_name[train_df.distance.argmin()])
 print('max ', train_df.distance[train_df.distance.argmax()], '  ', train_df.image_name[train_df.distance.argmax()])
 
 
-# In[16]:
+# In[18]:
 
 
 #img = open_img(os.path.join(DIR_DATA_TRAIN, train_df.image_name[train_df.distance.argmin()]))
@@ -235,19 +280,19 @@ cv2.destroyAllWindows()
 
 
 
-# In[17]:
+# In[19]:
 
 
 train_df['ext'] = train_df.image_name.apply(lambda x: x.split('.')[1])
 
 
-# In[18]:
+# In[20]:
 
 
 train_df.distance.hist(bins = 15)
 
 
-# In[19]:
+# In[21]:
 
 
 # 520 x 112
@@ -263,7 +308,7 @@ train_df.distance.hist(bins = 15)
 
 # Посмотрим пересечение датасетов
 
-# In[20]:
+# In[22]:
 
 
 tmp = list(fnames_train.intersection(fnames_test))
@@ -305,14 +350,14 @@ for el in test_heic:
     cv2.imshow(f'motion blur {el}', img)
     cv2.waitKey(0)
     cv2.destroyAllWindows() 
-# In[21]:
+# In[23]:
 
 
 motion_blur_train = ['img_2709.heic', 'img_2733.heic', 'img_2734.heic']    # 'img_2734.heic' возможно рабочий 
 motion_blur_test  = ['img_2674.heic']
 
 
-# In[22]:
+# In[24]:
 
 
 img = open_img(os.path.join(DIR_DATA_TRAIN, 'img_2745.heic'))
@@ -322,6 +367,91 @@ img = cv2.resize(img, [252*4, 252*3])
 cv2.imshow('motion blur', img)
 cv2.waitKey(0)
 cv2.destroyAllWindows() 
+
+
+# In[ ]:
+
+
+
+
+
+# In[25]:
+
+
+train_df.columns
+
+
+# In[26]:
+
+
+#train_df['exp_w'] = train_df.w.apply(lambda x: np.exp(x))
+train_df['log_w'] = train_df.w.apply(lambda x: np.log(x))
+
+
+# In[ ]:
+
+
+
+
+
+# Посмотрим на корреляцию с признаками из train_upd
+
+# In[27]:
+
+
+#plot_corrc(train_df, ['x_min', 'y_min', 'x_max', 'y_max', 'h', 'w']) #'conf', 
+plot_corrc(train_df, ['w', 'log_w'])
+
+
+# In[ ]:
+
+
+
+
+
+# In[28]:
+
+
+train_df.sort_values('w').head(10)
+
+
+# In[29]:
+
+
+test_df.sort_values('w').head(10)
+
+
+# In[32]:
+
+
+#el = 92 # 394, 313, 314
+#name, x_min, y_min, x_max, y_max, dist = train_df.loc[el, ['image_name', 'x_min', 'y_min', 'x_max', 'y_max', 'distance']].values
+
+el = 122 # 143, 122, 32, 406
+name, x_min, y_min, x_max, y_max = test_df.loc[el, ['image_name', 'x_min', 'y_min', 'x_max', 'y_max']].values
+
+img = open_img(os.path.join(DIR_DATA_TEST, name))
+
+cv2.rectangle(img, 
+              (int(x_min), int(y_min)), 
+              (int(x_max), int(y_max)),
+              (255, 0, 0), 
+              6,
+              #cv2.FILLED
+             )
+
+
+img = cv2.resize(img, [252*4, 252*3])
+
+cv2.imshow('bir error', img)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:

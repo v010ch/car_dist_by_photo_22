@@ -45,7 +45,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-# In[5]:
+# In[27]:
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
@@ -60,8 +60,9 @@ get_ipython().run_line_magic('matplotlib', 'inline')
 # In[6]:
 
 
-DIR_SUBM = os.path.join(os.getcwd(), 'subm')
 DIR_DATA = os.path.join(os.getcwd(), 'data')
+DIR_SUBM = os.path.join(os.getcwd(), 'subm')
+DIR_SUBM_TRAIN = os.path.join(os.getcwd(), 'subm', 'train')
 DIR_DATA_TRAIN = os.path.join(DIR_DATA, 'train')
 DIR_DATA_TEST  = os.path.join(DIR_DATA, 'test')
 
@@ -124,17 +125,27 @@ def get_center_dist(inp_center: Tuple[int, int], inp_point: Tuple[int, int]) -> 
     return np.sqrt((inp_center[0] - inp_point[0])**2 +                    (inp_center[1] - inp_point[1])**2)
 
 
-# In[11]:
+# In[15]:
 
 
 def determine_targ_car(inp_results, inp_img_cntr: Tuple[int, int]) -> int:
     
     min_dist = 1000000
-    min_idx = -1
+    min_idx  = -1
     
     for el in range(inp_results.xyxy[0].shape[0]):
+        # учитываем только машины
         if inp_results.xyxy[0][el][5].int().item() != 2:
             continue
+            
+        # минимальные габариты учитываемых машин
+        # в противном случае иногда ближе к центру оказываются машины например 27х54
+        h = inp_results.xyxy[0][el][3] - inp_results.xyxy[0][el][1]
+        w = inp_results.xyxy[0][el][2] - inp_results.xyxy[0][el][0]
+        if w < 200 or h < 200:
+            continue
+            
+            
         car_cntr = get_car_center(inp_results.xyxy[0][el])
         cur_dist = get_center_dist(inp_img_cntr, car_cntr)
         if cur_dist < min_dist:
@@ -144,7 +155,7 @@ def determine_targ_car(inp_results, inp_img_cntr: Tuple[int, int]) -> int:
     return min_idx
 
 
-# In[12]:
+# In[16]:
 
 
 def create_feeatures(inp_fnames: List[str], inp_dir: str, inp_model, use_centr: Optional[bool] = False):
@@ -204,7 +215,7 @@ def create_feeatures(inp_fnames: List[str], inp_dir: str, inp_model, use_centr: 
 
 
 
-# In[13]:
+# In[17]:
 
 
 #model = torch.hub.load('ultralytics/yolov5', 'yolov5x6')
@@ -240,7 +251,7 @@ for img_name in tqdm(train_img_names):
         
         results = [img_name] + results.xyxy[0][target_goal].numpy().tolist()
         train_data.append(results)
-# In[14]:
+# In[18]:
 
 
 train_df = create_feeatures(train_img_names, DIR_DATA_TRAIN, model, use_centr = True) #use_centr
@@ -254,7 +265,7 @@ train_df.shape
 
 
 
-# In[15]:
+# In[19]:
 
 
 test_df = create_feeatures(test_img_names, DIR_DATA_TEST, model, use_centr = True) #use_centr
@@ -267,33 +278,43 @@ test_df.shape
 
 
 
-# In[16]:
+# yolov5 не найдено машин:   
+# train: img_1890.jpg,    
+# test: img_1888.jpg, img_2674.heic, img_2571.jpg, img_1889.jpg(only person)   
+
+# In[ ]:
+
+
+
+
+
+# In[20]:
 
 
 sns.histplot(train_df, x='h')
 plt.show()
 
 
-# In[17]:
+# In[21]:
 
 
 sns.histplot(train_df, x='w')
 plt.show()
 
 
-# In[18]:
+# In[ ]:
 
 
-train_df.head(20)
 
 
-# In[19]:
+
+# In[23]:
 
 
 train_df['class'].value_counts()
 
 
-# In[20]:
+# In[24]:
 
 
 test_df['class'].value_counts()
@@ -307,7 +328,33 @@ test_df['class'].value_counts()
 
 
 
-# In[21]:
+# In[25]:
+
+
+for el in ['x_min', 'y_min', 'x_max', 'y_max', 'h', 'w']:
+    train_df[f'log_{el}'] = train_df[el].apply(lambda x: np.log(x))
+    test_df[f'log_{el}'] = test_df[el].apply(lambda x: np.log(x))
+
+
+# In[ ]:
+
+
+
+
+
+# In[28]:
+
+
+train_df.head(20)
+
+
+# In[ ]:
+
+
+
+
+
+# In[26]:
 
 
 train_df.to_csv(os.path.join(DIR_DATA, 'train_upd.csv'), index = False)
