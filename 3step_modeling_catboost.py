@@ -282,7 +282,8 @@ for file_name in test_img_names - set(sample_solution_df['image_name'].values):
 lost_test_items_df = pd.DataFrame(lost_test_items, columns=['image_name', 'distance'])
 sample_solution_df = pd.concat([sample_solution_df, lost_test_items_df])
 
-sample_solution_df.to_csv(os.path.join(DIR_SUBM, '15_yolo5l_minhw_cntr_niter_nomb.csv'), sep=';', index=False)
+#sample_solution_df.to_csv(os.path.join(DIR_SUBM, '16_yolo5l_minhw_cntr_niter_nomb.csv'), sep=';', index=False)
+sample_solution_df.to_csv(os.path.join(DIR_SUBM, '16_mp.csv'), sep=';', index=False)
 
 
 # In[ ]:

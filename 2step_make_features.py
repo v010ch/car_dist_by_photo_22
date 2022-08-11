@@ -17,10 +17,17 @@ notebookstart= time.time()
 # In[2]:
 
 
-import torch
+get_ipython().run_line_magic('load_ext', 'autoreload')
+get_ipython().run_line_magic('autoreload', '2')
 
 
 # In[3]:
+
+
+import torch
+
+
+# In[4]:
 
 
 import os
@@ -37,7 +44,15 @@ from tqdm.auto import tqdm
 tqdm.pandas()
 
 
-# In[4]:
+# In[5]:
+
+
+from itertools import product
+#import multiprocessing as mp
+import torch.multiprocessing as mp
+
+
+# In[6]:
 
 
 #import matplotlib
@@ -45,10 +60,16 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-# In[27]:
+# In[7]:
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
+
+
+# In[8]:
+
+
+from src.mkcarfeatures import features as ft
 
 
 # In[ ]:
@@ -57,7 +78,25 @@ get_ipython().run_line_magic('matplotlib', 'inline')
 
 
 
-# In[6]:
+# In[ ]:
+
+
+
+
+!pip install multiprocesspandasfrom multiprocesspandas import applyparallel
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[9]:
 
 
 DIR_DATA = os.path.join(os.getcwd(), 'data')
@@ -73,7 +112,7 @@ DIR_DATA_TEST  = os.path.join(DIR_DATA, 'test')
 
 
 
-# In[7]:
+# In[10]:
 
 
 test_img_names  = set(os.listdir(DIR_DATA_TEST))
@@ -81,7 +120,7 @@ train_img_names = set(os.listdir(DIR_DATA_TRAIN))
 len(test_img_names), len(train_img_names)
 
 
-# In[8]:
+# In[11]:
 
 
 train_labels_df = pd.read_csv(os.path.join(DIR_DATA, 'train.csv'), sep=';', index_col=None)
@@ -105,108 +144,10 @@ train_labels_df = pd.read_csv(os.path.join(DIR_DATA, 'train.csv'), sep=';', inde
 
 
 
-# In[9]:
+# In[ ]:
 
 
-def get_car_center(inp_tensor: torch.Tensor) -> Tuple[int, int]:
 
-    car_cntr = (int((inp_tensor[2].int().item() - inp_tensor[0].int().item())/2 + inp_tensor[0].int().item()),
-                int((inp_tensor[3].int().item() - inp_tensor[1].int().item())/2 + inp_tensor[1].int().item())
-        )
-    
-    return car_cntr
-
-
-# In[10]:
-
-
-def get_center_dist(inp_center: Tuple[int, int], inp_point: Tuple[int, int]) -> float:
-    
-    return np.sqrt((inp_center[0] - inp_point[0])**2 +                    (inp_center[1] - inp_point[1])**2)
-
-
-# In[15]:
-
-
-def determine_targ_car(inp_results, inp_img_cntr: Tuple[int, int]) -> int:
-    
-    min_dist = 1000000
-    min_idx  = -1
-    
-    for el in range(inp_results.xyxy[0].shape[0]):
-        # учитываем только машины
-        if inp_results.xyxy[0][el][5].int().item() != 2:
-            continue
-            
-        # минимальные габариты учитываемых машин
-        # в противном случае иногда ближе к центру оказываются машины например 27х54
-        h = inp_results.xyxy[0][el][3] - inp_results.xyxy[0][el][1]
-        w = inp_results.xyxy[0][el][2] - inp_results.xyxy[0][el][0]
-        if w < 200 or h < 200:
-            continue
-            
-            
-        car_cntr = get_car_center(inp_results.xyxy[0][el])
-        cur_dist = get_center_dist(inp_img_cntr, car_cntr)
-        if cur_dist < min_dist:
-            min_dist = cur_dist
-            min_idx = el
-
-    return min_idx
-
-
-# In[16]:
-
-
-def create_feeatures(inp_fnames: List[str], inp_dir: str, inp_model, use_centr: Optional[bool] = False):
-    
-    ret_data = []
-
-    for img_name in tqdm(inp_fnames): 
-        #if 'heic' in img_name:
-        #    heif_file = pyheif.read(os.path.join(inp_dir, img_name))
-        #   img = Image.frombytes(heif_file.mode, heif_file.size, heif_file.data, "raw", heif_file.mode, heif_file.stride)
-        #else:
-        #    img = Image.open(os.path.join(inp_dir, img_name))
-        img = Image.open(os.path.join(inp_dir, img_name))
-        
-        
-        img = np.array(img)
-        #results = model(np.array(img))
-        results = model(img)
-    
-        if results.xyxy[0].shape != torch.Size([0, 6]):
-
-            if use_centr:
-                #img_cntr = (int(img_.shape[1]/2), int(img_.shape[0]/2))
-                img_cntr = (int(img.shape[1]/2), int(img.shape[0]/2))
-                target_goal = determine_targ_car(results, img_cntr)
-            else:
-                target_goal = 0
-
-            if target_goal < 0:
-                print(f'wtf2, {img_name}   {results.xyxy[0].shape}')
-                continue
-                
-            h = results.xyxy[0][target_goal][3] - results.xyxy[0][target_goal][1]
-            w = results.xyxy[0][target_goal][2] - results.xyxy[0][target_goal][0]
-            results = results.xyxy[0][target_goal].numpy().tolist() + [h.item(), w.item()]
-            
-            # позволим алгоритмам самим выбирать как заполнить пропуски
-            ret_data.append([img_name] + results)
-            
-            
-        else:
-            print(f'wtf, {img_name}   {results.xyxy[0].shape}')
-            # позволим алгоритмам самим выбирать как заполнить пропуски
-            #results = [0, 0, 0, 0, 0, 0, 0, 0]
-
-# позволим алгоритмам самим выбирать как заполнить пропуски
-#        ret_data.append([img_name] + results)
-        
-    ret_data = pd.DataFrame(ret_data, columns = ['image_name', 'x_min', 'y_min', 'x_max', 'y_max', 'conf', 'class', 'h', 'w'])
-        
-    return ret_data
 
 
 # In[ ]:
@@ -215,13 +156,63 @@ def create_feeatures(inp_fnames: List[str], inp_dir: str, inp_model, use_centr: 
 
 
 
-# In[17]:
+# In[12]:
 
 
 #model = torch.hub.load('ultralytics/yolov5', 'yolov5x6')
 model = torch.hub.load('ultralytics/yolov5', 'yolov5l')
 model.classes = [0, 2]  # person and car
 _ = model.cpu()
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[13]:
+
+
+from functools import partial
+
+
+# In[42]:
+
+
+get_ipython().run_cell_magic('time', '', 'with mp.Pool(processes = (mp.cpu_count() - 2)) as pool:\n    #results = pool.map(ft.create_feeatures_mp, product(list(train_img_names)[:5], [DIR_DATA_TRAIN], [model]))\n    #results = pool.map(ft.create_feeatures_mp, product(list(train_img_names)[:5], [DIR_DATA_TRAIN]))\n    results = pool.map(partial(ft.create_feeatures_mp, inp_dir = DIR_DATA_TRAIN, inp_model = model), train_img_names)')
+
+
+# In[41]:
+
+
+train_df = pd.DataFrame(results, columns = ['image_name', 'x_min', 'y_min', 'x_max', 'y_max', 'conf', 'class', 'h', 'w'])
+train_df = pd.merge(train_labels_df, train_df, how='left')
+train_df.shape
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
@@ -250,13 +241,14 @@ for img_name in tqdm(train_img_names):
         
         
         results = [img_name] + results.xyxy[0][target_goal].numpy().tolist()
-        train_data.append(results)
-# In[18]:
-
-
-train_df = create_feeatures(train_img_names, DIR_DATA_TRAIN, model, use_centr = True) #use_centr
+        train_data.append(results)#train_df = ft.create_feeatures(list(train_img_names)[:10], DIR_DATA_TRAIN, model, use_centr = True) #use_centr
+train_df = ft.create_feeatures(train_img_names, DIR_DATA_TRAIN, model, use_centr = True) #use_centr
 train_df = pd.merge(train_labels_df, train_df, how='left')
-train_df.shape
+train_df.shapetrain_df.columns
+# In[43]:
+
+
+train_df[train_df.image_name == 'img_1890.jpg']
 
 
 # In[ ]:
@@ -265,17 +257,31 @@ train_df.shape
 
 
 
-# In[19]:
+# In[ ]:
 
+
+
+
+
+# In[44]:
+
+
+get_ipython().run_cell_magic('time', '', 'with mp.Pool(processes = (mp.cpu_count() - 2)) as pool:\n    #results = pool.map(ft.create_feeatures_mp, product(list(train_img_names)[:5], [DIR_DATA_TRAIN], [model]))\n    #results = pool.map(ft.create_feeatures_mp, product(list(train_img_names)[:5], [DIR_DATA_TRAIN]))\n    results = pool.map(partial(ft.create_feeatures_mp, inp_dir = DIR_DATA_TEST, inp_model = model), test_img_names)')
+
+
+# In[46]:
+
+
+test_df = pd.DataFrame(results, columns = ['image_name', 'x_min', 'y_min', 'x_max', 'y_max', 'conf', 'class', 'h', 'w'])
+test_df.shape
 
 test_df = create_feeatures(test_img_names, DIR_DATA_TEST, model, use_centr = True) #use_centr
 test_df.shape
+# In[55]:
 
 
-# In[ ]:
-
-
-
+#test_df[test_df.image_name == 'img_2571.jpg']
+#test_df.head()
 
 
 # yolov5 не найдено машин:   
@@ -288,14 +294,14 @@ test_df.shape
 
 
 
-# In[20]:
+# In[56]:
 
 
 sns.histplot(train_df, x='h')
 plt.show()
 
 
-# In[21]:
+# In[57]:
 
 
 sns.histplot(train_df, x='w')
@@ -308,13 +314,13 @@ plt.show()
 
 
 
-# In[23]:
+# In[58]:
 
 
 train_df['class'].value_counts()
 
 
-# In[24]:
+# In[59]:
 
 
 test_df['class'].value_counts()
@@ -328,7 +334,7 @@ test_df['class'].value_counts()
 
 
 
-# In[25]:
+# In[60]:
 
 
 for el in ['x_min', 'y_min', 'x_max', 'y_max', 'h', 'w']:
@@ -342,7 +348,7 @@ for el in ['x_min', 'y_min', 'x_max', 'y_max', 'h', 'w']:
 
 
 
-# In[28]:
+# In[61]:
 
 
 train_df.head(20)
@@ -354,7 +360,7 @@ train_df.head(20)
 
 
 
-# In[26]:
+# In[62]:
 
 
 train_df.to_csv(os.path.join(DIR_DATA, 'train_upd.csv'), index = False)

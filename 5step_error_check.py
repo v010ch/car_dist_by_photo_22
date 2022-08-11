@@ -199,7 +199,7 @@ plot_corrc(train_df, ['err'])
 
 # Посмотрим на кадры с наибольней (по модулю) ошибкой
 
-# In[17]:
+# In[ ]:
 
 
 for el in train_df.index[:5]:
