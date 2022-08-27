@@ -1,20 +1,21 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
-
-
-
-
-
 # In[1]:
+
+
+get_ipython().run_line_magic('load_ext', 'watermark')
+get_ipython().run_line_magic('watermark', '')
+
+
+# In[2]:
 
 
 import time
 notebookstart= time.time()
 
 
-# In[2]:
+# In[3]:
 
 
 import os
@@ -32,13 +33,25 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-# In[3]:
+# In[4]:
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
 
 
-# In[4]:
+# In[5]:
+
+
+get_ipython().run_line_magic('watermark', '--iversions')
+
+
+# In[ ]:
+
+
+
+
+
+# In[6]:
 
 
 DIR_DATA = os.path.join(os.getcwd(), 'data')
@@ -60,20 +73,7 @@ DIR_DATA_TEST  = os.path.join(DIR_DATA, 'test')
 
 
 
-# In[5]:
-
-
-train_df = pd.read_csv(os.path.join(DIR_SUBM_TRAIN, 'train_with_pred.csv'))
-train_df.shape
-
-
-# In[ ]:
-
-
-
-
-
-# In[6]:
+# In[8]:
 
 
 def open_img(inp_path: str) -> np.ndarray:
@@ -96,10 +96,11 @@ def open_img(inp_path: str) -> np.ndarray:
     return ret_img
 
 
-# In[7]:
+# In[9]:
 
 
-def plot_corrc(inp_df, inp_cols, targ_cols = ['distance']):
+def plot_corrc(inp_df: pd.DataFrame, inp_cols: List[str], targ_cols = ['distance']) -> None:
+    
     f, ax = plt.subplots(1, 2, figsize=(24, 8))
     sns.heatmap(inp_df[inp_cols + targ_cols].corr(),
     #sns.heatmap(inp_df.query('c2 == 0')[inp_cols + targ_cols].corr(), \n",
@@ -128,6 +129,15 @@ def plot_corrc(inp_df, inp_cols, targ_cols = ['distance']):
 
 
 
+# # Загружаем данные
+
+# In[ ]:
+
+
+train_df = pd.read_csv(os.path.join(DIR_SUBM_TRAIN, 'train_with_pred.csv'))
+train_df.shape
+
+
 # In[ ]:
 
 
@@ -136,56 +146,56 @@ def plot_corrc(inp_df, inp_cols, targ_cols = ['distance']):
 
 # Рассчитаем и помотрим на ошибки
 
-# In[8]:
+# In[10]:
 
 
 train_df['err'] = train_df.distance - train_df.pred
 train_df['err_upd'] = train_df.err.apply(lambda x: abs(x))
 
 
-# In[9]:
+# In[11]:
 
 
 train_df.err.hist()
 
 
-# In[10]:
+# In[12]:
 
 
 train_df.err_upd.hist()
 
 
-# In[11]:
+# In[13]:
 
 
 train_df.err.nsmallest(5)
 
 
-# In[12]:
+# In[14]:
 
 
 train_df.err.nlargest(5)
 
 
-# In[13]:
+# In[15]:
 
 
 train_df.sort_values(by='err_upd', ascending = False, inplace = True)
 
 
-# In[14]:
+# In[16]:
 
 
 train_df.head(20)
 
 
-# In[15]:
+# In[17]:
 
 
 plot_corrc(train_df, ['err'])
 
 
-# In[16]:
+# In[18]:
 
 
 #plot_corrc(train_df, ['err_upd'])
@@ -199,7 +209,7 @@ plot_corrc(train_df, ['err'])
 
 # Посмотрим на кадры с наибольней (по модулю) ошибкой
 
-# In[17]:
+# In[19]:
 
 
 for el in train_df.index[:5]:

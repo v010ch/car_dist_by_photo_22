@@ -1,17 +1,20 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[36]:
 
 
 import cv2
-import pillow_heif
 
 from PIL import Image
 from PIL.ExifTags import TAGS
 
+#import pillow_heif
+#from pillow_heif import register_heif_opener
+#register_heif_opener() # for using Image.open for .heic without changes
 
-# In[2]:
+
+# In[3]:
 
 
 import os
@@ -25,13 +28,13 @@ from tqdm.auto import tqdm
 tqdm.pandas()
 
 
-# In[3]:
+# In[4]:
 
 
 #import seaborn as sns
 
 
-# In[4]:
+# In[5]:
 
 
 #import matplotlib
@@ -39,13 +42,13 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 
 
-# In[5]:
+# In[6]:
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
 
 
-# In[6]:
+# In[7]:
 
 
 #!pip list
@@ -63,7 +66,7 @@ get_ipython().run_line_magic('matplotlib', 'inline')
 
 
 
-# In[7]:
+# In[8]:
 
 
 DIR_DATA = os.path.join(os.getcwd(), 'data')
@@ -77,30 +80,30 @@ DIR_DATA_TEST  = os.path.join(DIR_DATA, 'test')
 
 
 
-# In[8]:
+# In[35]:
 
 
 def open_img(inp_path: str) -> np.ndarray:
     
-    if inp_path.endswith('.jpg'):
-        ret_img = cv2.imread(inp_path)
-    else:
-        if pillow_heif.is_supported(inp_path):
-            heif_file = pillow_heif.open_heif(inp_path, convert_hdr_to_8bit=False)
+    #if inp_path.endswith('.jpg'):
+    ret_img = cv2.imread(inp_path)
+    #else:
+    #    if pillow_heif.is_supported(inp_path):
+    #        heif_file = pillow_heif.open_heif(inp_path, convert_hdr_to_8bit=False)
             #print("image mode:", heif_file.mode)
             #print("image data length:", len(heif_file.data))
             #print("image data stride:", heif_file.stride)
-            if heif_file.has_alpha:
-                heif_file.convert_to("BGRA;16")
-            else:
-                heif_file.convert_to("BGR;16")  # convert 10 bit image to RGB 16 bit.
+    #        if heif_file.has_alpha:
+    #            heif_file.convert_to("BGRA;16")
+    #        else:
+    #            heif_file.convert_to("BGR;16")  # convert 10 bit image to RGB 16 bit.
             #print("image mode:", heif_file.mode)
-            ret_img = np.asarray(heif_file)
+    #        ret_img = np.asarray(heif_file)
     
     return ret_img
 
 
-# In[9]:
+# In[10]:
 
 
 def plot_corrc(inp_df: pd.DataFrame, inp_cols: List[str], targ_cols: Optional[List[int]] = ['distance']):
@@ -145,7 +148,7 @@ def plot_corrc(inp_df: pd.DataFrame, inp_cols: List[str], targ_cols: Optional[Li
 
 # ## Загрузка данных
 
-# In[10]:
+# In[11]:
 
 
 train_list = os.listdir(DIR_DATA_TRAIN)
@@ -161,7 +164,7 @@ fnames_train = set([el.split('.')[0] for el in train_list])
 fnames_test  = set([el.split('.')[0] for el in test_list])
 
 
-# In[11]:
+# In[12]:
 
 
 #print(Counter([el.split('.')[1] for el in train_list]))
@@ -178,7 +181,7 @@ fnames_test  = set([el.split('.')[0] for el in test_list])
 
 # (train_upd загружается только после выполнения 2step_make_features)
 
-# In[12]:
+# In[13]:
 
 
 #train_df = pd.read_csv(os.path.join(DIR_DATA, 'train.csv'), delimiter = ';')
@@ -187,13 +190,13 @@ test_df  = pd.read_csv(os.path.join(DIR_DATA, 'test_upd.csv'))
 train_df.shape, test_df.shape
 
 
-# In[13]:
+# In[14]:
 
 
 train_df.head()
 
 
-# In[14]:
+# In[15]:
 
 
 train_df.groupby('image_name').agg('size').value_counts()
@@ -231,26 +234,26 @@ Counter(sizes)Counter({(3024, 4032, 3): 519, (4032, 3024, 3): 2})
 
 # Посмотрим на мин и макс
 
-# In[15]:
+# In[16]:
 
 
 train_df.distance.nlargest(5)
 
 
-# In[16]:
+# In[17]:
 
 
 train_df.distance.nsmallest(5)
 
 
-# In[17]:
+# In[18]:
 
 
 print('min ', train_df.distance[train_df.distance.argmin()], '  ', train_df.image_name[train_df.distance.argmin()])
 print('max ', train_df.distance[train_df.distance.argmax()], '  ', train_df.image_name[train_df.distance.argmax()])
 
 
-# In[18]:
+# In[19]:
 
 
 #img = open_img(os.path.join(DIR_DATA_TRAIN, train_df.image_name[train_df.distance.argmin()]))
@@ -280,19 +283,19 @@ cv2.destroyAllWindows()
 
 
 
-# In[19]:
+# In[20]:
 
 
 train_df['ext'] = train_df.image_name.apply(lambda x: x.split('.')[1])
 
 
-# In[20]:
+# In[21]:
 
 
 train_df.distance.hist(bins = 15)
 
 
-# In[21]:
+# In[22]:
 
 
 # 520 x 112
@@ -308,7 +311,7 @@ train_df.distance.hist(bins = 15)
 
 # Посмотрим пересечение датасетов
 
-# In[22]:
+# In[23]:
 
 
 tmp = list(fnames_train.intersection(fnames_test))
@@ -350,14 +353,14 @@ for el in test_heic:
     cv2.imshow(f'motion blur {el}', img)
     cv2.waitKey(0)
     cv2.destroyAllWindows() 
-# In[23]:
+# In[24]:
 
 
 motion_blur_train = ['img_2709.heic', 'img_2733.heic', 'img_2734.heic']    # 'img_2734.heic' возможно рабочий 
 motion_blur_test  = ['img_2674.heic']
 
 
-# In[24]:
+# In[25]:
 
 
 img = open_img(os.path.join(DIR_DATA_TRAIN, 'img_2745.heic'))
@@ -375,13 +378,13 @@ cv2.destroyAllWindows()
 
 
 
-# In[25]:
+# In[26]:
 
 
 train_df.columns
 
 
-# In[26]:
+# In[27]:
 
 
 #train_df['exp_w'] = train_df.w.apply(lambda x: np.exp(x))
@@ -396,11 +399,11 @@ train_df['log_w'] = train_df.w.apply(lambda x: np.log(x))
 
 # Посмотрим на корреляцию с признаками из train_upd
 
-# In[27]:
+# In[31]:
 
 
 #plot_corrc(train_df, ['x_min', 'y_min', 'x_max', 'y_max', 'h', 'w']) #'conf', 
-plot_corrc(train_df, ['w', 'log_w'])
+plot_corrc(train_df, ['w'])
 
 
 # In[ ]:
@@ -421,7 +424,7 @@ train_df.sort_values('w').head(5)
 test_df.sort_values('w').head(5)
 
 
-# In[32]:
+# In[30]:
 
 
 #el = 92 # 394, 313, 314
@@ -474,7 +477,7 @@ cv2.destroyAllWindows()
 
 
 
-# In[23]:
+# In[31]:
 
 
 # open the image
@@ -520,13 +523,13 @@ for tagid in exifdata:
 
 
 
-# In[24]:
+# In[33]:
 
 
 colors = {0: (0, 0, 255), 1: (255, 0, 0), 2: (0, 255, 0), }
 
 
-# In[25]:
+# In[37]:
 
 
 import torch
@@ -537,7 +540,7 @@ model.classes = [0, 2]  # person and car
 _ = model.cpu()
 
 
-# In[26]:
+# In[38]:
 
 
 # motion blur img_2733.heic, img_2734.heic
@@ -555,7 +558,7 @@ _ = model.cpu()
 # 'x_min', 'y_min', 'x_max', 'y_max', 'conf', 'class'
 
 
-# In[27]:
+# In[39]:
 
 
 #img = open_img(os.path.join(DIR_DATA_TRAIN, 'img_2733.heic'))
@@ -564,20 +567,16 @@ img = open_img(os.path.join(DIR_DATA_TRAIN, 'img_2674.jpg'))
 results = model(img)
 
 
-# In[28]:
+# In[40]:
 
 
 colors[results.xyxy[0][0][-1].int().item()]
 
 
-# In[29]:
+# In[41]:
 
 
 def get_car_center(inp_tensor: torch.Tensor) -> Tuple[int, int]:
-    
-    #car_cntr = (int((inp_tensor.xyxy[0][el][2].int().item() - inp_tensor.xyxy[0][el][0].int().item())/2 + inp_tensor.xyxy[0][el][0].int().item()),
-    #            int((inp_tensor.xyxy[0][el][3].int().item() - inp_tensor.xyxy[0][el][1].int().item())/2 + inp_tensor.xyxy[0][el][1].int().item())
-    #    )
 
     car_cntr = (int((inp_tensor[2].int().item() - inp_tensor[0].int().item())/2 + inp_tensor[0].int().item()),
                 int((inp_tensor[3].int().item() - inp_tensor[1].int().item())/2 + inp_tensor[1].int().item())
@@ -586,7 +585,7 @@ def get_car_center(inp_tensor: torch.Tensor) -> Tuple[int, int]:
     return car_cntr
 
 
-# In[30]:
+# In[42]:
 
 
 def get_center_dist(inp_center: Tuple[int, int], inp_point: Tuple[int, int]) -> float:
@@ -594,22 +593,111 @@ def get_center_dist(inp_center: Tuple[int, int], inp_point: Tuple[int, int]) -> 
     return np.sqrt((inp_center[0] - inp_point[0])**2 +                    (inp_center[1] - inp_point[1])**2)
 
 
-# In[31]:
+# In[43]:
 
 
-def determine_targ_car(inp_results, inp_img_cntr) -> int:
+def determine_targ_car(inp_results, inp_img_cntr: Tuple[int, int]) -> int:
     
-    min = 1000000
-
+    min_dist = 1000000
+    min_idx  = -1
+    
     for el in range(inp_results.xyxy[0].shape[0]):
+        # учитываем только машины
+        if inp_results.xyxy[0][el][5].int().item() != 2:
+            continue
+            
+        # минимальные габариты учитываемых машин
+        # в противном случае иногда ближе к центру оказываются машины например 27х54
+        h = inp_results.xyxy[0][el][3] - inp_results.xyxy[0][el][1]
+        w = inp_results.xyxy[0][el][2] - inp_results.xyxy[0][el][0]
+        if w < 200 or h < 200:
+            continue
+            
+            
         car_cntr = get_car_center(inp_results.xyxy[0][el])
         cur_dist = get_center_dist(inp_img_cntr, car_cntr)
-        if cur_dist < min:
-            min = cur_dist
+        if cur_dist < min_dist:
+            min_dist = cur_dist
             min_idx = el
 
-    #print(min_idx)
     return min_idx
+
+
+# In[44]:
+
+
+def get_aspect_ratio(inp_points: np.ndarray) -> float:
+    upper_len  = inp_points[1, 0, 0] - inp_points[0, 0, 0] 
+    bottom_len = inp_points[2, 0, 0] - inp_points[3, 0, 0] 
+    aver_len   = (upper_len + bottom_len)/2
+    
+    upper_hi  = inp_points[3, 0, 1] - inp_points[0, 0, 1] 
+    bottom_hi = inp_points[2, 0, 1] - inp_points[1, 0, 1] 
+    aver_hi   = (upper_hi + bottom_hi)/2
+    
+    return aver_hi / aver_len
+
+
+# In[45]:
+
+
+#def get_label_plate_features(inp_img: np.ndarray, inp_coords: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def get_label_plate_features(inp_img: np.ndarray, inp_coords: np.ndarray) -> List[float]:
+    
+    ret_lp_region   = np.zeros((4, 1, 2), dtype = np.int32)
+    ret_legal_plate = np.zeros((4, 1, 2), dtype = np.int32)
+    
+    #x_min, y_min, x_max, y_max, conf, class, 
+    #sub_img = inp_img[int(inp_coords.y_min) : int(inp_coords.y_max),
+    #                  int(inp_coords.x_min) : int(inp_coords.x_max)
+    #                 ]
+    sub_img = inp_img[int(inp_coords[1]) : int(inp_coords[3]),
+                      int(inp_coords[0]) : int(inp_coords[2])
+                     ]
+    
+    # немного размываем что бы убрать лишние грани
+    sub_img = cv2.bilateralFilter(sub_img, 11, 17, 17) 
+    
+    # детекрируем грани / контуры
+    #edged = cv2.Canny(sub_img, 30, 200) 
+    edged = cv2.Canny(sub_img, 15, 400) 
+    cnts,new = cv2.findContours(edged.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    
+    # находим примерный контур номерного знака среди 10 самых больших контуров
+    # 
+    cnts = sorted(cnts, key = cv2.contourArea, reverse = True) [:10]   
+    for idx, c in enumerate(cnts):
+        # вычисляем периметр контура. True - контур замкнутый
+        perimeter = cv2.arcLength(c, True)                     
+        approx = cv2.approxPolyDP(c, 0.018 * perimeter, True)  # 
+        
+        # предполагаем, что если контур из 4х точек, что это вероятно номер
+        # так же учитываем соотношение сторон
+        # ??? ограничить угол???
+        if len(approx) == 4:  
+            ar = get_aspect_ratio(approx) 
+            #print(idx, ar)
+            if ar < 0.85 and ar > 0.65:
+                #print('region ', idx, ar)
+                ret_lp_region = approx
+
+            if ar < 0.25 and ar > 0.15:
+                #print('legal plate ', idx, ar)
+                ret_legal_plate = approx
+                
+    return (ret_legal_plate, ret_lp_region)
+    
+    # извлекаем признаки из координат
+    #ret_legal_plate = get_lp_features_by_coord(ret_legal_plate)
+    #ret_lp_region   = get_lp_features_by_coord(ret_lp_region)
+    
+    #return ret_legal_plate + ret_lp_region
+
+
+# In[ ]:
+
+
+
 
 min = 1000000
 #img_cntr = (int(img.shape[0]/2), int(img.shape[1]/2))
@@ -624,14 +712,14 @@ for el in range(results.xyxy[0].shape[0]):
         min_idx = el
         
 print(min_idx)
-# In[32]:
+# In[46]:
 
 
 img_cntr = (int(img.shape[1]/2), int(img.shape[0]/2))
 target_goal = determine_targ_car(results, img_cntr)
 
 
-# In[33]:
+# In[47]:
 
 
 cv2.circle(img, img_cntr, 10, (0, 0, 255), 20)
@@ -660,7 +748,7 @@ for el in range(results.xyxy[0].shape[0]):
     cv2.putText(img, f'car{el}', text_point, cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 0, 0), 5)
     
     #break
-# In[34]:
+# In[48]:
 
 
 img = cv2.resize(img, [252*4, 252*3])
@@ -670,24 +758,28 @@ cv2.waitKey(0)
 cv2.destroyAllWindows() 
 
 
+# In[53]:
+
+
+train_df[train_Df.image_name == 'image_2321.jpg']
+
+
 # In[ ]:
 
 
 
 
 
-# In[ ]:
+# In[57]:
 
 
-
-
-
-# In[44]:
-
-
+tt = ['img_1927.jpg', 'img_2321.jpg', 'img_2577.jpg','img_2578.jpg','img_2579.jpg','img_2583.jpg','img_2694.jpg',]
 #for idx, el in enumerate(train_list[:10]):
-for idx, el in enumerate(train_list[:10]):
-    img = open_img(os.path.join(DIR_DATA_TRAIN, el))
+#for idx, el in enumerate(train_list[100:120]):
+for idx, el in enumerate(tt):
+    #img = open_img(os.path.join(DIR_DATA_TRAIN, el))
+    img = Image.open(os.path.join(DIR_DATA_TRAIN, el))
+    img = np.array(img)
     
     results = model(img)
     
@@ -703,20 +795,38 @@ for idx, el in enumerate(train_list[:10]):
                          )
             #_ = cv2.circle(img, car_cntr, 10, (255, 0, 0), 20)
             #print(obj)
+
         img_cntr = (int(img.shape[1]/2), int(img.shape[0]/2))
         target_goal = determine_targ_car(results, img_cntr)
         #print(target_goal)
-        sub_img = img[results.xyxy[0][target_goal][0].int().item() : results.xyxy[0][target_goal][1].int().item(), 
-                      results.xyxy[0][target_goal][2].int().item() : results.xyxy[0][target_goal][3].int().item()
+
+        plate, reg = get_label_plate_features(img, results.xyxy[0][target_goal].numpy().tolist())
+        sub_img = img[results.xyxy[0][target_goal][1].int().item() : results.xyxy[0][target_goal][3].int().item(), 
+                  results.xyxy[0][target_goal][0].int().item() : results.xyxy[0][target_goal][2].int().item()
+                 ]
+        cv2.drawContours(sub_img, [plate], -1, (255, 0, 0), 6)        
+        cv2.drawContours(sub_img, [reg], -1, (0, 0, 255), 6) 
+
+        img[results.xyxy[0][target_goal][1].int().item() : results.xyxy[0][target_goal][3].int().item(), 
+            results.xyxy[0][target_goal][0].int().item() : results.xyxy[0][target_goal][2].int().item()
+          ] = sub_img
+    
+        
+        
+        
+        
+        sub_img = img[results.xyxy[0][target_goal][1].int().item() : results.xyxy[0][target_goal][3].int().item(), 
+                      results.xyxy[0][target_goal][0].int().item() : results.xyxy[0][target_goal][2].int().item()
                      ]
         white_rect = np.ones(sub_img.shape, dtype=np.uint8) * 255
         res = cv2.addWeighted(sub_img, 0.5, white_rect, 0.5, 1.0)
         
-        img[results.xyxy[0][target_goal][0].int().item() : results.xyxy[0][target_goal][1].int().item(), 
-            results.xyxy[0][target_goal][2].int().item() : results.xyxy[0][target_goal][3].int().item()
-           ] = sub_img
+        img[results.xyxy[0][target_goal][1].int().item() : results.xyxy[0][target_goal][3].int().item(), 
+            results.xyxy[0][target_goal][0].int().item() : results.xyxy[0][target_goal][2].int().item()
+          ] = res
         
-        
+    
+    
     cv2.circle(img, img_cntr, 10, (0, 0, 255), 20)
     
     img = cv2.resize(img, [252*4, 252*3])
@@ -729,59 +839,80 @@ for idx, el in enumerate(train_list[:10]):
     #break
 
 
+# In[89]:
+
+
+plate
+
+
 # In[50]:
 
 
-img.shape
+print(results.xyxy[0][target_goal][1].int().item(), results.xyxy[0][target_goal][3].int().item(), )
+print(results.xyxy[0][target_goal][0].int().item(), results.xyxy[0][target_goal][2].int().item())
 
 
-# In[48]:
+# In[51]:
 
 
-
-sub_img = img[results.xyxy[0][target_goal][0].int().item() : results.xyxy[0][target_goal][1].int().item(), 
-              results.xyxy[0][target_goal][2].int().item() : results.xyxy[0][target_goal][3].int().item()
+sub_img = img[results.xyxy[0][target_goal][1].int().item() : results.xyxy[0][target_goal][3].int().item(), 
+              results.xyxy[0][target_goal][0].int().item() : results.xyxy[0][target_goal][2].int().item()
              ]
-sub_img
-
-
-# In[45]:
-
 
 sub_img = cv2.resize(sub_img, [252*4, 252*3])
 #img = cv2.resize(img, [504*4, 504*3])    
-           
-cv2.imshow(f'{idx} {el}', sub_img)
+
+cv2.imshow(f'tt', sub_img)
 cv2.waitKey(0)
 cv2.destroyAllWindows() 
 
 
-# In[ ]:
+# In[47]:
 
 
+sub_img
 
 
-
-# In[52]:
-
-
-cv2.imshow(f'{idx} {el}', img[results.xyxy[0][target_goal][0].int().item() : results.xyxy[0][target_goal][1].int().item(), 
-          results.xyxy[0][target_goal][2].int().item() : results.xyxy[0][target_goal][3].int().item()
-         ])
-cv2.waitKey(0)
-cv2.destroyAllWindows() 
+# In[59]:
 
 
-# In[53]:
+train_df = pd.read_csv(os.path.join(DIR_DATA, 'train_upd.csv'))
 
 
-results.xyxy[0][target_goal][0].int().item(), results.xyxy[0][target_goal][1].int().item(),  results.xyxy[0][target_goal][2].int().item(), results.xyxy[0][target_goal][3].int().item()
+# In[71]:
 
 
-# In[54]:
+tmp99.image_name.values[0]
 
 
-'x_min', 'y_min', 'x_max', 'y_max', 'conf',
+# In[72]:
+
+
+tt = ['img_1927.jpg', 'img_2321.jpg', 'img_2577.jpg','img_2578.jpg','img_2579.jpg','img_2583.jpg','img_2694.jpg',]
+for el in tt:
+    tmp99 = train_df[train_df.image_name == el]
+    
+    img = Image.open(os.path.join(DIR_DATA_TRAIN, tmp99.image_name.values[0]))
+    img = np.array(img)
+    
+    sub_img = img[int(tmp99.y_min) : int(tmp99.y_max),
+                  int(tmp99.x_min) : int(tmp99.x_max)
+                 ]
+
+    sub_img = cv2.resize(sub_img, [252*4, 252*3])
+    #img = cv2.resize(img, [504*4, 504*3])    
+
+    cv2.imshow(f'tt', sub_img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows() 
+    
+    
+
+
+# In[67]:
+
+
+tmp99.y_min
 
 
 # In[ ]:
