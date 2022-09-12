@@ -12,7 +12,7 @@ get_ipython().run_line_magic('watermark', '')
 
 
 import time
-notebookstart= time.time()
+notebookstart = time.time()
 
 
 # In[3]:
@@ -44,7 +44,7 @@ from catboost import __version__ as cb_version
 print(f'cb_version: {cb_version}')
 
 
-# Блок для воспроизводимости результатов
+# # Блок для воспроизводимости результатов
 
 # In[6]:
 
@@ -76,6 +76,8 @@ LGB_RANDOMSEED = 874256
 
 
 
+# # Выставление констант
+
 # In[7]:
 
 
@@ -95,23 +97,34 @@ DIR_DATA_TEST  = os.path.join(DIR_DATA, 'test')
 # In[8]:
 
 
-def plot_feature_importance(importance, names: List[str], model_type:str, imp_number: Optional[int] = 30) -> None:
+def plot_feature_importance(importance: np.ndarray, names: List[str], model_type: str, imp_number: Optional[int] = 30) -> None:
+    """Графическое отображение важности признаков (по убыванияю) модели на основе величины влияния на предсказанные значения
+    
+    args:
+        importance: массив важности признаков (получаемый из модели CatBoostRegressor)
+        names:      список имен признаков
+        model_type: имя модели
+        imp_number: (опционально, 30) количество признаков для отображения
+        
+    return:
+        None
+    """
     
     #Create arrays from feature importance and feature names
     feature_importance = np.array(importance)
     feature_names = np.array(names)
     
     #Create a DataFrame using a Dictionary
-    data={'feature_names':feature_names,'feature_importance':feature_importance}
+    data = {'feature_names': feature_names,'feature_importance': feature_importance}
     fi_df = pd.DataFrame(data)
     
     #Sort the DataFrame in order decreasing feature importance
-    fi_df.sort_values(by=['feature_importance'], ascending=False,inplace=True)
+    fi_df.sort_values(by = ['feature_importance'], ascending = False, inplace = True)
     
     #Define size of bar plot
-    plt.figure(figsize=(10,8))
+    plt.figure(figsize = (10,8))
     #Plot Searborn bar chart
-    sns.barplot(x=fi_df['feature_importance'][:imp_number], y=fi_df['feature_names'][:imp_number])
+    sns.barplot(x = fi_df['feature_importance'][:imp_number], y = fi_df['feature_names'][:imp_number])
     #Add chart labels
     plt.title(model_type + ' FEATURE IMPORTANCE')
     plt.xlabel('FEATURE IMPORTANCE')
@@ -138,7 +151,7 @@ def plot_feature_importance(importance, names: List[str], model_type:str, imp_nu
 
 # # Загрузка данных
 
-# In[ ]:
+# In[9]:
 
 
 train_df = pd.read_csv(os.path.join(DIR_DATA, 'train_upd.csv'))
@@ -146,7 +159,7 @@ test_df  = pd.read_csv(os.path.join(DIR_DATA, 'test_upd.csv'))
 train_df.shape, test_df.shape
 
 
-# In[ ]:
+# In[10]:
 
 
 train_df.head()
@@ -158,10 +171,11 @@ train_df.head()
 
 
 
-# Исключаем из обучающей выборки сильно размытые кадры из подземки.   
-# На них размеры определяются явно некорректно,что помешает при обучении
+# В данных присутствуют сильно размытые изображения. Ни рамка автомобиля, ни рамка автомобильного номера   
+# ни нах не могут быть определены с удовлетворяющей точностью. Так что обучение на них скорее вего ухудшит результат.   
+# Исключаем их из тренировочного датасета.
 
-# In[ ]:
+# In[11]:
 
 
 motion_blur_train = set(['img_2709.heic', 'img_2733.heic', 'img_2734.heic'])    # 'img_2734.heic' возможно рабочий 
@@ -188,18 +202,18 @@ print(train_df.shape)
 
 # # Обучаем модель
 
-# cv на 3 фолда.   
-# по ним выбираем лучшее количество итераций по RMSE.
+# По кросс валидации (3 фолда) определим оптимальное количество итераций (по лучшей средней RMSE на валидационных фолдах)     
+# Затем на этом количестве итераций обучим модель на всех данных.
 
-# In[ ]:
+# In[12]:
 
 
-get_ipython().run_cell_magic('time', '', 'params = {"iterations": 3500,\n          "loss_function": \'RMSE\',\n          #\'eval_metric\': \'R2\',\n         }\n\n#features = [\'log_x_min\', \'log_y_min\', \'log_x_max\', \'log_y_max\', \'conf\', \'log_h\', \'log_w\']\nfeatures = [\'log_plate_h\', \'log_plate_w\']\n\ntrain = Pool(data = train_df[features],\n             label = train_df[[\'distance\']],\n            )\n\nscores = cv(train, params,\n            fold_count = 3,\n            verbose = False,\n            plot = True,\n           )')
+get_ipython().run_cell_magic('time', '', 'params = {"iterations": 3500,\n          "loss_function": \'RMSE\',\n          #\'eval_metric\': \'R2\',\n         }\n\nfeatures = [\'log_plate_h\', \'log_plate_w\']\n\ntrain = Pool(data = train_df[features],\n             label = train_df[[\'distance\']],\n            )\n\nscores = cv(train, params,\n            fold_count = 3,\n            verbose = False,\n            plot = True,\n           )')
 
 
 # выбираем оптимальное количество итераций
 
-# In[ ]:
+# In[13]:
 
 
 niter = scores['test-RMSE-mean'].argmin() + 13
@@ -223,7 +237,7 @@ linux + env
 
 # Обучем на этом количестве итераций модель на всей обучающей выборке
 
-# In[ ]:
+# In[14]:
 
 
 get_ipython().run_cell_magic('time', '', "\nmodel_cb = CatBoostRegressor(iterations = niter, verbose = 100)\n# Fit model\nmodel_cb.fit(train_df[features], train_df[['distance']].values)")
@@ -239,7 +253,7 @@ linux + env
 717:	learn: 0.1719744	total: 439ms	remaining: 0us       x/y/conf/h/w with nulls   yolov5l cntr niter minhw200
 # Посмотрим на выжность признаков
 
-# In[ ]:
+# In[15]:
 
 
 #plot_feature_importance(model_cb.get_feature_importance(), train_df[features].get_feature_names(), 'CATBOOST')
@@ -252,9 +266,9 @@ plot_feature_importance(model_cb.get_feature_importance(), features, 'CATBOOST')
 
 
 
-# Предскажем на трейне для просмотра ошибок в 5step
+# Сохраняем предсказания на трейне для анализа ошибок (в 5step)
 
-# In[ ]:
+# In[16]:
 
 
 pred_train = model_cb.predict(train_df[features])
@@ -274,10 +288,9 @@ train_df.to_csv(os.path.join(DIR_SUBM_TRAIN, 'train_with_pred.csv'), index = Fal
 
 
 
-# Предсказываем для теста.    
-# Оформляем сабмит.
+# # Создаем сабмит
 
-# In[ ]:
+# In[17]:
 
 
 preds = model_cb.predict(test_df[features])
@@ -286,13 +299,13 @@ test_df['distance'] = preds
 sample_solution_df = test_df[['image_name', 'distance']]
 
 
-# In[ ]:
+# In[18]:
 
 
 test_img_names = set(os.listdir(DIR_DATA_TEST))
 
 
-# In[ ]:
+# In[19]:
 
 
 lost_test_items = []
@@ -303,8 +316,19 @@ for file_name in test_img_names - set(sample_solution_df['image_name'].values):
 lost_test_items_df = pd.DataFrame(lost_test_items, columns=['image_name', 'distance'])
 sample_solution_df = pd.concat([sample_solution_df, lost_test_items_df])
 
-#sample_solution_df.to_csv(os.path.join(DIR_SUBM, '17_palte_minhw_cntr_niter_nomb.csv'), sep=';', index=False)
-sample_solution_df.to_csv(os.path.join(DIR_SUBM, '18_repeat.csv'), sep=';', index=False)
+sample_solution_df.to_csv(os.path.join(DIR_SUBM, '18_repeat2.csv'), sep=';', index=False)
+
+
+# In[ ]:
+
+
+
+
+
+# In[20]:
+
+
+print("Notebook Runtime: %0.2f Minutes"%((time.time() - notebookstart)/60))
 
 
 # In[ ]:

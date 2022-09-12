@@ -12,7 +12,7 @@ get_ipython().run_line_magic('watermark', '')
 
 
 import time
-notebookstart= time.time()
+notebookstart = time.time()
 
 
 # In[3]:
@@ -51,6 +51,8 @@ get_ipython().run_line_magic('watermark', '--iversions')
 
 
 
+# # Выставление констант
+
 # In[6]:
 
 
@@ -73,11 +75,17 @@ DIR_DATA_TEST  = os.path.join(DIR_DATA, 'test')
 
 
 
-# In[8]:
+# In[7]:
 
 
 def open_img(inp_path: str) -> np.ndarray:
-    
+    """
+    Открытие изображения с учетом heif формата
+    aregs:
+        inp_path - путь к изображению
+    return:
+        np.ndarray - изображение
+    """
     if inp_path.endswith('.jpg'):
         ret_img = cv2.imread(inp_path)
     else:
@@ -96,30 +104,26 @@ def open_img(inp_path: str) -> np.ndarray:
     return ret_img
 
 
-# In[9]:
+# In[36]:
 
 
 def plot_corrc(inp_df: pd.DataFrame, inp_cols: List[str], targ_cols = ['distance']) -> None:
-    
+    """
+    Отображение корреляций заданных признаков и целевой переменной
+    args:
+        inp_df - входной датафрейм
+        inp_cols  - список входных признаков для отбражения корреляции
+        targ_cols - целевая переменная
+    return:
+    """
     f, ax = plt.subplots(1, 2, figsize=(24, 8))
     sns.heatmap(inp_df[inp_cols + targ_cols].corr(),
-    #sns.heatmap(inp_df.query('c2 == 0')[inp_cols + targ_cols].corr(), \n",
                 annot = True, cmap= 'coolwarm', linewidths=3, linecolor='black', ax = ax[0])
     sns.heatmap(inp_df[inp_cols + targ_cols].corr(method = 'spearman'),
-    #sns.heatmap(inp_df.query('c2 == 1')[inp_cols + targ_cols].corr(), \n",
                 annot = True, cmap= 'coolwarm', linewidths=3, linecolor='black', ax = ax[1])
-#    sns.heatmap(inp_df.query('c2 == 0')[inp_cols + targ_cols].corr(method = 'spearman'), \n",
-#                annot = True, cmap= 'coolwarm', linewidths=3, linecolor='black', ax = ax[1, 0])\n",
-#    sns.heatmap(inp_df.query('c2 == 1')[inp_cols + targ_cols].corr(method = 'spearman'), \n",
-#                annot = True, cmap= 'coolwarm', linewidths=3, linecolor='black', ax = ax[1, 1])\n",
-    if 'distrib_brdr' in inp_df.columns:
-        sns.pairplot(inp_df[inp_cols + targ_cols + ['distrib_brdr']], height = 16,
-                     hue = 'distrib_brdr', #palette = {\"A\": \"C0\", \"B\": \"C1\"}\n",
-                     #markers = ['x', 'o']\n",
-                    )
-    else:
-        sns.pairplot(inp_df[inp_cols + targ_cols], height = 16,
-                    )
+    
+    sns.pairplot(inp_df[inp_cols + targ_cols], height = 16,
+                )
    
 
 
@@ -131,7 +135,7 @@ def plot_corrc(inp_df: pd.DataFrame, inp_cols: List[str], targ_cols = ['distance
 
 # # Загружаем данные
 
-# In[ ]:
+# In[9]:
 
 
 train_df = pd.read_csv(os.path.join(DIR_SUBM_TRAIN, 'train_with_pred.csv'))
@@ -144,7 +148,7 @@ train_df.shape
 
 
 
-# Рассчитаем и помотрим на ошибки
+# Рассчитаем и посмотрим на ошибки
 
 # In[10]:
 
@@ -180,7 +184,7 @@ train_df.err.nlargest(5)
 # In[15]:
 
 
-train_df.sort_values(by='err_upd', ascending = False, inplace = True)
+train_df.sort_values(by ='err_upd', ascending = False, inplace = True)
 
 
 # In[16]:
@@ -189,10 +193,10 @@ train_df.sort_values(by='err_upd', ascending = False, inplace = True)
 train_df.head(20)
 
 
-# In[17]:
+# In[39]:
 
 
-plot_corrc(train_df, ['err'])
+#plot_corrc(train_df, ['err'])
 
 
 # In[18]:
@@ -207,35 +211,62 @@ plot_corrc(train_df, ['err'])
 
 
 
-# Посмотрим на кадры с наибольней (по модулю) ошибкой
+# Посмотрим на кадры с наибольшей (по модулю) ошибкой
 
-# In[19]:
+# In[34]:
 
 
 for el in train_df.index[:5]:
-    name, x_min, y_min, x_max, y_max, dist, pred, err = train_df.loc[el, ['image_name', 'x_min', 'y_min', 'x_max', 'y_max', 'distance', 'pred', 'err']].values
-    img = open_img(os.path.join(DIR_DATA_TRAIN, name))
+    tmp = train_df.loc[el, :]
+    
+    img = open_img(os.path.join(DIR_DATA_TRAIN, tmp.image_name))
 
+    #  рамка найденного автомобиля
     cv2.rectangle(img, 
-                  (int(x_min), int(y_min)), 
-                  (int(x_max), int(y_max)),
+                  (int(tmp.car_x_min), int(tmp.car_y_min)), 
+                  (int(tmp.car_x_max), int(tmp.car_y_max)),
                   (255, 0, 0), 
                   6,
-                  #cv2.FILLED
                  )
 
+    sub_img = img[int(tmp.car_y_min) : int(tmp.car_y_max),
+                  int(tmp.car_x_min) : int(tmp.car_x_max)
+                 ]
 
+    # рамка номера
+    cv2.rectangle(sub_img, 
+              (int(tmp.plate_y_min), int(tmp.plate_x_min)), 
+              (int(tmp.plate_y_max), int(tmp.plate_x_max)),
+              (255, 0, 0), 
+              6,
+             )
+    
+
+    img[int(tmp.car_y_min) : int(tmp.car_y_max),
+        int(tmp.car_x_min) : int(tmp.car_x_max)
+       ] = sub_img
+    
     img = cv2.resize(img, [252*4, 252*3])
 
     cv2.imshow('bir error', img)
+    #cv2.imshow('bir error', sub_img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+
+# автомобили определяются верно.    
+# автомобильный номер с виду тоже.    
 
 # In[ ]:
 
 
 
+
+
+# In[22]:
+
+
+print("Notebook Runtime: %0.2f Minutes"%((time.time() - notebookstart)/60))
 
 
 # In[ ]:
